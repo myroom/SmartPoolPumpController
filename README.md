@@ -40,75 +40,12 @@ input_select:
 ```yaml
 sensor:
     - platform: history_stats
-      name: Pool Pump Daily Runtime
+      name: Daily Pump Runtime Sensor
       entity_id: switch.pool_pump # замените на вашу сущность насоса
       state: 'on'
       type: time
       start: '{{ now().replace(hour=0, minute=0, second=0) }}'
       end: '{{ now() }}'
-```
-
-### 3. (Опционально) Input Number для настройки параметров
-
-```yaml
-input_number:
-    pool_volume:
-        name: Pool Volume
-        min: 1000
-        max: 100000
-        step: 100
-        unit_of_measurement: 'L'
-        icon: mdi:pool
-
-    pump_flow_rate:
-        name: Pump Flow Rate
-        min: 100
-        max: 10000
-        step: 50
-        unit_of_measurement: 'L/h'
-        icon: mdi:water-pump
-
-    max_daily_runtime:
-        name: Maximum Daily Runtime
-        min: 1
-        max: 24
-        step: 0.5
-        unit_of_measurement: 'h'
-        icon: mdi:clock-outline
-```
-
-### 4. (Опционально) Template sensor для отображения статуса
-
-```yaml
-template:
-    - sensor:
-          - name: 'Pool Pump Status'
-            state: >
-                {% set mode = states('input_select.pool_pump_mode') %}
-                {% set pump_state = states('switch.pool_pump') %}
-                {% set runtime = states('sensor.pool_pump_daily_runtime') | float(0) %}
-                {% set max_time = states('input_number.max_daily_runtime') | float(8) %}
-
-                {% if mode == 'Off' %}
-                  Отключен вручную
-                {% elif mode == 'On' %}
-                  Включен вручную
-                {% elif pump_state == 'on' %}
-                  Работает ({{ runtime }}ч из {{ max_time }}ч)
-                {% else %}
-                  Ожидание ({{ runtime }}ч из {{ max_time }}ч)
-                {% endif %}
-            icon: >
-                {% set mode = states('input_select.pool_pump_mode') %}
-                {% set pump_state = states('switch.pool_pump') %}
-
-                {% if mode == 'Off' %}
-                  mdi:water-pump-off
-                {% elif pump_state == 'on' %}
-                  mdi:water-pump
-                {% else %}
-                  mdi:water-pump-off
-                {% endif %}
 ```
 
 ## Настройка Blueprint
