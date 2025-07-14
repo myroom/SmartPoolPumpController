@@ -1,50 +1,50 @@
 blueprint:
   name: Pool Pump Scheduler (Corrected)
   description: |
-    Управление насосом бассейна по объему, производительности и учётом ручной работы за день.
-    Автоматически рассчитывает нужное время работы и корректирует его, если насос был включён вручную.
+    Pool pump management based on volume, flow rate and accounting for manual operation during the day.
+    Automatically calculates required run time and adjusts it if the pump was turned on manually.
   domain: automation
   input:
     pool_pump:
-      name: Насос
-      description: Сущность переключателя насоса
+      name: Pump
+      description: Pool pump switch entity
       selector:
         entity:
           domain: switch
 
     pool_volume:
-      name: Объем бассейна
-      description: В той же единице, что и расход насоса (л, м3, галлон)
+      name: Pool Volume
+      description: In the same unit as pump flow rate (l, m3, gallon)
       selector:
         number:
           min: 1
           max: 100000
-          unit_of_measurement: "л/м3/gal"
+          unit_of_measurement: "l/m3/gal"
           mode: box
 
     pump_flow_rate:
-      name: Производительность насоса
-      description: В той же единице, что и объем (л/ч, м3/ч, gph)
+      name: Pump Flow Rate
+      description: In the same unit as volume (l/h, m3/h, gph)
       selector:
         number:
           min: 0.1
           max: 1000
-          unit_of_measurement: "л/ч/м3/ч/gph"
+          unit_of_measurement: "l/h/m3/h/gph"
           step: 0.1
           mode: box
 
     maximum_run_time:
-      name: Максимальное время работы в сутки
+      name: Maximum Daily Run Time
       selector:
         number:
           min: 1
           max: 24
           step: 1
-          unit_of_measurement: "ч"
+          unit_of_measurement: "h"
           mode: slider
 
     season_toggle:
-      name: Сезонный включатель
+      name: Season Toggle
       selector:
         entity:
           domain:
@@ -52,14 +52,14 @@ blueprint:
             - switch
 
     manual_mode_toggle:
-      name: Ручной режим (input_boolean)
+      name: Manual Mode (input_boolean)
       selector:
         entity:
           domain: input_boolean
 
     manual_runtime_sensor:
-      name: Сенсор времени работы насоса за день
-      description: Сенсор типа history_stats
+      name: Daily Pump Runtime Sensor
+      description: History stats type sensor
       selector:
         entity:
           domain: sensor
