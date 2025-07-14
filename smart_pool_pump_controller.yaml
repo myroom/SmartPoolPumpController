@@ -16,22 +16,24 @@ blueprint:
 
         pool_volume:
             name: Pool Volume
-            description: In the same unit as pump flow rate (l, m3, gallon)
+            description: In the same unit as pump flow rate (m3)
+            default: 65
             selector:
                 number:
                     min: 1
                     max: 100000
-                    unit_of_measurement: 'l/m3/gal'
+                    unit_of_measurement: 'm3'
                     mode: box
 
         pump_flow_rate:
             name: Pump Flow Rate
-            description: In the same unit as volume (l/h, m3/h, gph)
+            description: In the same unit as volume (m3/h)
+            default: 15
             selector:
                 number:
                     min: 0.1
                     max: 1000
-                    unit_of_measurement: 'l/h/m3/h/gph'
+                    unit_of_measurement: 'm3/h'
                     step: 0.1
                     mode: box
 
