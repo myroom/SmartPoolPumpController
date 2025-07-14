@@ -61,6 +61,27 @@ sensor:
     - **Pool Pump Mode**: input_select.pool_pump_mode
     - **Daily Pump Runtime Sensor**: sensor.pool_pump_daily_runtime
 
+## Пример карты Lovelace
+
+Добавьте следующую карту в ваш Lovelace dashboard для удобного управления и мониторинга насоса бассейна:
+
+```yaml
+type: entities
+entities:
+    - entity: sensor.pool_water_temperature
+      name: Температура воды
+    - entity: input_select.pool_pump_mode
+    - entity: sensor.daily_pump_runtime_sensor
+    - entity: switch.pool_pump
+      name: Насос бассейна
+title: Pool card
+```
+
+**Примечание**: Убедитесь, что используете правильные имена entities:
+
+-   `sensor.pool_water_temperature` - сенсор температуры воды бассейна
+-   `switch.pool_pump` - переключатель насоса бассейна
+
 ## Принцип работы
 
 1. **Простая логика интервалов**: Blueprint использует заданный интервал между включениями насоса (по умолчанию 1 час)
