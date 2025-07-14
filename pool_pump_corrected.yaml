@@ -1,0 +1,129 @@
+blueprint:
+  name: Pool Pump Scheduler (Corrected)
+  description: |
+    Управление насосом бассейна по объему, производительности и учётом ручной работы за день.
+    Автоматически рассчитывает нужное время работы и корректирует его, если насос был включён вручную.
+  domain: automation
+  input:
+    pool_pump:
+      name: Насос
+      description: Сущность переключателя насоса
+      selector:
+        entity:
+          domain: switch
+
+    pool_volume:
+      name: Объем бассейна
+      description: В той же единице, что и расход насоса (л, м3, галлон)
+      selector:
+        number:
+          min: 1
+          max: 100000
+          unit_of_measurement: "л/м3/gal"
+          mode: box
+
+    pump_flow_rate:
+      name: Производительность насоса
+      description: В той же единице, что и объем (л/ч, м3/ч, gph)
+      selector:
+        number:
+          min: 0.1
+          max: 1000
+          unit_of_measurement: "л/ч/м3/ч/gph"
+          step: 0.1
+          mode: box
+
+    maximum_run_time:
+      name: Максимальное время работы в сутки
+      selector:
+        number:
+          min: 1
+          max: 24
+          step: 1
+          unit_of_measurement: "ч"
+          mode: slider
+
+    season_toggle:
+      name: Сезонный включатель
+      selector:
+        entity:
+          domain:
+            - input_boolean
+            - switch
+
+    manual_mode_toggle:
+      name: Ручной режим (input_boolean)
+      selector:
+        entity:
+          domain: input_boolean
+
+    manual_runtime_sensor:
+      name: Сенсор времени работы насоса за день
+      description: Сенсор типа history_stats
+      selector:
+        entity:
+          domain: sensor
+
+variables:
+  var_pool_pump: !input pool_pump
+  var_pool_volume: !input pool_volume
+  var_pump_flow_rate: !input pump_flow_rate
+  var_maximum_run_time: !input maximum_run_time
+  var_season_toggle: !input season_toggle
+  var_manual_mode: !input manual_mode_toggle
+  var_manual_runtime_today: "{{ states[!input manual_runtime_sensor] | float(0) }}"
+  var_turnover_rate: "{{ (var_pool_volume | float(1)) / (var_pump_flow_rate | float(1)) }}"
+  var_runs_per_day: "{{ ((var_maximum_run_time | float(1)) / var_turnover_rate) | round(0) }}"
+  var_corrected_run_time: >
+    {% set max_time = var_maximum_run_time | float %}
+    {% set manual_time = var_manual_runtime_today %}
+    {% if manual_time >= max_time %}
+      0
+    {% else %}
+      {{ max_time - manual_time }}
+    {% endif %}
+  var_corrected_max_off_time: >
+    {% if var_runs_per_day > 0 %}
+      {{ (24 - var_corrected_run_time) / var_runs_per_day }}
+    {% else %}
+      24
+    {% endif %}
+  var_pump_state_changed_since: "{{ (now().timestamp() - as_timestamp(states[var_pool_pump].last_changed)) / 3600 }}"
+
+trigger:
+  - platform: time_pattern
+    minutes: "/1"
+
+condition: []
+
+action:
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: !input pool_pump
+            state: "off"
+          - condition: state
+            entity_id: !input season_toggle
+            state: "on"
+          - condition: template
+            value_template: "{{ var_pump_state_changed_since > var_corrected_max_off_time }}"
+        sequence:
+          - service: switch.turn_on
+            target:
+              entity_id: !input pool_pump
+
+      - conditions:
+          - condition: state
+            entity_id: !input season_toggle
+            state: "off"
+          - condition: state
+            entity_id: !input pool_pump
+            state: "on"
+        sequence:
+          - service: switch.turn_off
+            target:
+              entity_id: !input pool_pump
+
+  default: []
+
+mode: single
