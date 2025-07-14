@@ -60,6 +60,7 @@ blueprint:
         pool_pump_mode:
             name: Pool Pump Mode
             description: Select operation mode (Auto/On/Off)
+            default: input_select.pool_pump_mode
             selector:
                 entity:
                     domain: input_select
@@ -67,6 +68,7 @@ blueprint:
         manual_runtime_sensor:
             name: Daily Pump Runtime Sensor
             description: History stats sensor that tracks pump daily runtime (type 'time')
+            default: sensor.pool_pump_daily_runtime
             selector:
                 entity:
                     domain: sensor
