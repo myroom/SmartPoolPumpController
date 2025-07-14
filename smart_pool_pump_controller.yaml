@@ -58,6 +58,18 @@ blueprint:
                     unit_of_measurement: 'h'
                     mode: slider
 
+        cycle_runtime:
+            name: Cycle Runtime
+            description: How long pump runs in each cycle (minutes)
+            default: 120
+            selector:
+                number:
+                    min: 5
+                    max: 180
+                    step: 5
+                    unit_of_measurement: 'min'
+                    mode: slider
+
         pool_pump_mode:
             name: Pool Pump Mode
             description: Select operation mode (Auto/On/Off)
@@ -80,10 +92,12 @@ variables:
     var_pump_flow_rate: !input pump_flow_rate
     var_maximum_run_time: !input maximum_run_time
     var_pump_interval: !input pump_interval
+    var_cycle_runtime: !input cycle_runtime
     var_pump_mode: !input pool_pump_mode
     var_manual_runtime_sensor: !input manual_runtime_sensor
     var_manual_runtime_today: '{{ states(var_manual_runtime_sensor) | float(0) }}'
     var_pump_state_changed_since: '{{ (now().timestamp() - as_timestamp(states[var_pool_pump].last_changed)) / 3600 }}'
+    var_pump_running_time: '{{ (now().timestamp() - as_timestamp(states[var_pool_pump].last_changed)) / 60 if states(var_pool_pump) == "on" else 0 }}'
 
 trigger:
     - platform: time_pattern
@@ -124,6 +138,20 @@ action:
                 - service: switch.turn_on
                   target:
                       entity_id: !input pool_pump
+          # Auto cycle shutdown after runtime expires
+          - conditions:
+                - condition: template
+                  value_template: "{{ states(var_pump_mode) == 'Auto' }}"
+                - condition: state
+                  entity_id: !input pool_pump
+                  state: 'on'
+                - condition: template
+                  value_template: '{{ var_pump_running_time >= var_cycle_runtime }}'
+            sequence:
+                - service: switch.turn_off
+                  target:
+                      entity_id: !input pool_pump
+          # Auto cycle startup
           - conditions:
                 - condition: template
                   value_template: "{{ states(var_pump_mode) == 'Auto' }}"

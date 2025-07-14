@@ -16,6 +16,8 @@ This blueprint automatically:
 -   Accounts for manual pump operation during the day
 -   Adjusts automatic schedule to avoid exceeding maximum runtime
 -   Provides three operation modes: Auto, On, Off
+-   **Prevents pump overheating** with controlled cycles and cooling intervals
+-   **Automatic cycle management** - pump runs for set duration then rests
 
 ## Required Sensors and Entities
 
@@ -64,6 +66,7 @@ sensor:
     - **Pump Flow Rate**: Pump flow rate in l/h
     - **Maximum Daily Run Time**: Maximum daily runtime (hours)
     - **Pump Interval**: Interval between pump cycles (hours, default 1)
+    - **Cycle Runtime**: How long pump runs in each cycle (minutes, default 120)
     - **Pool Pump Mode**: input_select.pool_pump_mode
     - **Daily Pump Runtime Sensor**: sensor.pool_pump_daily_runtime
 
@@ -89,23 +92,57 @@ title: Pool card
 
 ## How it Works
 
-1. **Simple Interval Logic**: Blueprint uses a set interval between pump activations (default 1 hour)
+### Automatic Mode (Auto)
 
-2. **Manual Operation Tracking**: Tracks total pump runtime during the day via history_stats sensor
+The blueprint now uses **intelligent cycle management** to prevent pump overheating:
 
-3. **Automatic Activation**: In "Auto" mode, pump turns on automatically when:
+1. **Cycle Start**: Pump turns on automatically when:
 
     - Pump is off
-    - Set time has passed since last state change (pump_interval)
-    - Daily runtime limit is not exceeded (maximum_run_time)
+    - Set interval has passed since last state change (default 1 hour)
+    - Daily runtime limit is not exceeded (default 8 hours)
 
-4. **Manual Modes**:
-    - "On" - pump is always on
-    - "Off" - pump is always off
+2. **Cycle Runtime**: Pump runs for a **controlled duration** (default 120 minutes)
+
+3. **Automatic Shutdown**: Pump **automatically turns off** after cycle runtime expires
+
+4. **Cooling Period**: Pump stays off during the interval period for cooling
+
+5. **Cycle Repeat**: Process repeats until daily runtime limit is reached
+
+### Manual Operation Tracking
+
+-   Tracks total pump runtime during the day via history_stats sensor
+-   Accounts for manual pump operation in daily limit calculation
+
+### Manual Modes
+
+-   **"On"** - pump runs continuously (no cycle limits)
+-   **"Off"** - pump stays off and automation is disabled
+
+### Overheating Prevention
+
+-   **Controlled cycles** prevent continuous operation
+-   **Mandatory cooling periods** between cycles
+-   **Configurable runtime** per cycle (5-180 minutes)
 
 ## Notes
 
 -   All units of measurement (volume and flow rate) must be in the same system (liters/hour, m³/hour, etc.)
--   Automation checks status every minute
--   Manual pump operation time is automatically tracked
+-   Automation checks status every minute and responds immediately to mode changes
+-   Manual pump operation time is automatically tracked and counts toward daily limit
+-   **Cycle Runtime** should be set based on your pump specifications and cooling requirements
+-   **Pump Interval** should be longer than **Cycle Runtime** to ensure cooling periods
+-   In "Auto" mode, pump will never run continuously - it always follows cycle patterns
+-   Mode changes ("On"/"Off") take effect immediately, overriding current cycle
 -   It's recommended to set up notifications when daily runtime limit is exceeded
+
+## Example Cycle Timeline
+
+With default settings (120min cycle, 60min interval):
+
+-   **12:00** - Pump starts (if conditions met)
+-   **14:00** - Pump automatically stops (120min runtime completed)
+-   **15:00** - Next cycle can start (60min interval from last change)
+-   **17:00** - Pump automatically stops again
+-   And so on...
