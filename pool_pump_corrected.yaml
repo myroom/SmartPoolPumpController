@@ -1,5 +1,5 @@
 blueprint:
-    name: Pool Pump Scheduler (Corrected)
+    name: Smart Pool Pump Controller
     description: |
         Pool pump management with three operation modes: Auto, On, Off.
         In Auto mode: calculates required run time based on volume and flow rate, accounts for manual operation.

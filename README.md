@@ -1,4 +1,4 @@
-# Pool Pump Scheduler Blueprint
+# Smart Pool Pump Controller
 
 Автоматическое управление насосом бассейна на основе объема, производительности и учета ручной работы за день.
 
@@ -68,8 +68,7 @@ sensor:
 ```yaml
 type: entities
 entities:
-    - entity: sensor.pool_water_temperature
-      name: Температура воды
+    - entity: sensor.pool_water_temperature # Опционально
     - entity: input_select.pool_pump_mode
     - entity: sensor.daily_pump_runtime_sensor
     - entity: switch.pool_pump
