@@ -45,6 +45,18 @@ blueprint:
                     unit_of_measurement: 'h'
                     mode: slider
 
+        pump_interval:
+            name: Pump Interval
+            description: Time between pump cycles (hours)
+            default: 1
+            selector:
+                number:
+                    min: 0.5
+                    max: 12
+                    step: 0.5
+                    unit_of_measurement: 'h'
+                    mode: slider
+
         pool_pump_mode:
             name: Pool Pump Mode
             description: Select operation mode (Auto/On/Off)
@@ -64,25 +76,10 @@ variables:
     var_pool_volume: !input pool_volume
     var_pump_flow_rate: !input pump_flow_rate
     var_maximum_run_time: !input maximum_run_time
+    var_pump_interval: !input pump_interval
     var_pump_mode: !input pool_pump_mode
     var_manual_runtime_sensor: !input manual_runtime_sensor
     var_manual_runtime_today: '{{ states(var_manual_runtime_sensor) | float(0) }}'
-    var_turnover_rate: '{{ (var_pool_volume | float(1)) / (var_pump_flow_rate | float(1)) }}'
-    var_runs_per_day: '{{ ((var_maximum_run_time | float(1)) / var_turnover_rate) | round(0) }}'
-    var_corrected_run_time: >
-        {% set max_time = var_maximum_run_time | float %}
-        {% set manual_time = var_manual_runtime_today %}
-        {% if manual_time >= max_time %}
-          0
-        {% else %}
-          {{ max_time - manual_time }}
-        {% endif %}
-    var_corrected_max_off_time: >
-        {% if var_runs_per_day > 0 %}
-          {{ (24 - var_corrected_run_time) / var_runs_per_day }}
-        {% else %}
-          24
-        {% endif %}
     var_pump_state_changed_since: '{{ (now().timestamp() - as_timestamp(states[var_pool_pump].last_changed)) / 3600 }}'
 
 trigger:
@@ -113,14 +110,16 @@ action:
                 - service: switch.turn_off
                   target:
                       entity_id: !input pool_pump
-          - conditions:
-                - condition: template
-                  value_template: "{{ states(var_pump_mode) == 'Auto' }}"
-                - condition: state
-                  entity_id: !input pool_pump
-                  state: 'off'
-                - condition: template
-                  value_template: '{{ var_pump_state_changed_since > var_corrected_max_off_time }}'
+                - conditions:
+          - condition: template
+            value_template: "{{ states(var_pump_mode) == 'Auto' }}"
+          - condition: state
+            entity_id: !input pool_pump
+            state: 'off'
+          - condition: template
+            value_template: '{{ var_pump_state_changed_since > var_pump_interval }}'
+          - condition: template
+            value_template: '{{ var_manual_runtime_today < var_maximum_run_time }}'
             sequence:
                 - service: switch.turn_on
                   target:
