@@ -90,21 +90,14 @@ variables:
 trigger:
     - platform: time_pattern
       minutes: '/1'
+    - platform: state
+      entity_id: !input pool_pump_mode
 
 condition: []
 
 action:
     - choose:
-          - conditions:
-                - condition: template
-                  value_template: "{{ states(var_pump_mode) == 'On' }}"
-                - condition: state
-                  entity_id: !input pool_pump
-                  state: 'off'
-            sequence:
-                - service: switch.turn_on
-                  target:
-                      entity_id: !input pool_pump
+          # Немедленное выключение при режиме "Off"
           - conditions:
                 - condition: template
                   value_template: "{{ states(var_pump_mode) == 'Off' }}"
@@ -113,6 +106,24 @@ action:
                   state: 'on'
             sequence:
                 - service: switch.turn_off
+                  target:
+                      entity_id: !input pool_pump
+                - stop: "Насос выключен, автоматизация остановлена в режиме Off"
+          # Остановка автоматизации в режиме "Off" если насос уже выключен
+          - conditions:
+                - condition: template
+                  value_template: "{{ states(var_pump_mode) == 'Off' }}"
+            sequence:
+                - stop: "Автоматизация остановлена в режиме Off"
+          # Немедленное включение при режиме "On"
+          - conditions:
+                - condition: template
+                  value_template: "{{ states(var_pump_mode) == 'On' }}"
+                - condition: state
+                  entity_id: !input pool_pump
+                  state: 'off'
+            sequence:
+                - service: switch.turn_on
                   target:
                       entity_id: !input pool_pump
           - conditions:
