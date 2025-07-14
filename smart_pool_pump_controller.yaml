@@ -17,7 +17,6 @@ blueprint:
         pool_volume:
             name: Pool Volume
             description: In the same unit as pump flow rate (l, m3, gallon)
-            default: 65
             selector:
                 number:
                     min: 1
@@ -28,7 +27,6 @@ blueprint:
         pump_flow_rate:
             name: Pump Flow Rate
             description: In the same unit as volume (l/h, m3/h, gph)
-            default: 15
             selector:
                 number:
                     min: 0.1
@@ -97,7 +95,7 @@ condition: []
 
 action:
     - choose:
-          # Немедленное выключение при режиме "Off"
+          # Immediate shutdown in "Off" mode
           - conditions:
                 - condition: template
                   value_template: "{{ states(var_pump_mode) == 'Off' }}"
@@ -108,14 +106,14 @@ action:
                 - service: switch.turn_off
                   target:
                       entity_id: !input pool_pump
-                - stop: "Насос выключен, автоматизация остановлена в режиме Off"
-          # Остановка автоматизации в режиме "Off" если насос уже выключен
+                - stop: "Pump turned off, automation stopped in Off mode"
+          # Stop automation in "Off" mode if pump is already off
           - conditions:
                 - condition: template
                   value_template: "{{ states(var_pump_mode) == 'Off' }}"
             sequence:
-                - stop: "Автоматизация остановлена в режиме Off"
-          # Немедленное включение при режиме "On"
+                - stop: "Automation stopped in Off mode"
+          # Immediate activation in "On" mode
           - conditions:
                 - condition: template
                   value_template: "{{ states(var_pump_mode) == 'On' }}"
