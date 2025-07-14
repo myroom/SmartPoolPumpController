@@ -9,6 +9,7 @@ blueprint:
         pool_pump:
             name: Pump
             description: Pool pump switch entity
+            default: switch.pool_pump
             selector:
                 entity:
                     domain: switch
