@@ -68,7 +68,7 @@ blueprint:
         manual_runtime_sensor:
             name: Daily Pump Runtime Sensor
             description: History stats sensor that tracks pump daily runtime (type 'time')
-            default: sensor.pool_pump_daily_runtime
+            default: sensor.daily_pump_runtime_sensor
             selector:
                 entity:
                     domain: sensor
@@ -91,41 +91,41 @@ trigger:
 condition: []
 
 action:
-  - choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ states(var_pump_mode) == 'On' }}"
-          - condition: state
-            entity_id: !input pool_pump
-            state: 'off'
-        sequence:
-          - service: switch.turn_on
-            target:
-              entity_id: !input pool_pump
-      - conditions:
-          - condition: template
-            value_template: "{{ states(var_pump_mode) == 'Off' }}"
-          - condition: state
-            entity_id: !input pool_pump
-            state: 'on'
-        sequence:
-          - service: switch.turn_off
-            target:
-              entity_id: !input pool_pump
-      - conditions:
-          - condition: template
-            value_template: "{{ states(var_pump_mode) == 'Auto' }}"
-          - condition: state
-            entity_id: !input pool_pump
-            state: 'off'
-          - condition: template
-            value_template: '{{ var_pump_state_changed_since > var_pump_interval }}'
-          - condition: template
-            value_template: '{{ var_manual_runtime_today < var_maximum_run_time }}'
-        sequence:
-          - service: switch.turn_on
-            target:
-              entity_id: !input pool_pump
-    default: []
+    - choose:
+          - conditions:
+                - condition: template
+                  value_template: "{{ states(var_pump_mode) == 'On' }}"
+                - condition: state
+                  entity_id: !input pool_pump
+                  state: 'off'
+            sequence:
+                - service: switch.turn_on
+                  target:
+                      entity_id: !input pool_pump
+          - conditions:
+                - condition: template
+                  value_template: "{{ states(var_pump_mode) == 'Off' }}"
+                - condition: state
+                  entity_id: !input pool_pump
+                  state: 'on'
+            sequence:
+                - service: switch.turn_off
+                  target:
+                      entity_id: !input pool_pump
+          - conditions:
+                - condition: template
+                  value_template: "{{ states(var_pump_mode) == 'Auto' }}"
+                - condition: state
+                  entity_id: !input pool_pump
+                  state: 'off'
+                - condition: template
+                  value_template: '{{ var_pump_state_changed_since > var_pump_interval }}'
+                - condition: template
+                  value_template: '{{ var_manual_runtime_today < var_maximum_run_time }}'
+            sequence:
+                - service: switch.turn_on
+                  target:
+                      entity_id: !input pool_pump
+      default: []
 
 mode: single
