@@ -56,6 +56,26 @@ sensor:
       end: '{{ now() }}'
 ```
 
+### 3. Water Level Sensor (Optional)
+
+If you have a minimum water level sensor, add it as a binary sensor:
+
+```yaml
+binary_sensor:
+    - platform: gpio # or your sensor platform
+      name: Pool Water Level
+      pin: 18 # adjust pin according to your setup
+      device_class: problem
+      # For GPIO sensors:
+      # pull_mode: "UP"  # for NC sensors
+      # pull_mode: "DOWN"  # for NO sensors
+```
+
+**Sensor Types:**
+
+-   **NC (Normally Closed)**: Contact closed when water level is OK, opens when low
+-   **NO (Normally Open)**: Contact open when water level is OK, closes when low
+
 ## Blueprint Configuration
 
 [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fmyroom%2FSmartPoolPumpController%2Fblob%2Fmain%2Fsmart_pool_pump_controller.yaml)
@@ -66,7 +86,7 @@ sensor:
     - **Pump**: Select your pump entity (switch)
     - **Pool Volume**: Pool volume in liters
     - **Pump Flow Rate**: Pump flow rate in l/h
-    - **Water Turnover Cycles**: Number of complete water turnovers per day (default 2)
+    - **Water Turnover Cycles**: Number of complete water turnovers per day (default 1)
     - **Maximum Daily Run Time**: Maximum daily runtime (hours)
     - **Pump Interval**: Interval between pump cycles (hours, default 1)
     - **Cycle Runtime**: How long pump runs in each cycle (minutes, default 120)
@@ -74,6 +94,9 @@ sensor:
     - **End Time**: Automation end time - pump stops working after this time (default 21:00)
     - **Pool Pump Mode**: input_select.pool_pump_mode
     - **Daily Pump Runtime Sensor**: sensor.pool_pump_daily_runtime
+    - **Water Level Sensor** (Optional): Minimum water level sensor (binary_sensor)
+    - **Water Level Sensor Type**: NC (ON when water OK) or NO (OFF when water OK)
+    - **Notification Service** (Optional): Service for low water level alerts
 
 ## Lovelace Card Example
 
@@ -83,6 +106,7 @@ Add the following card to your Lovelace dashboard for convenient pool pump contr
 type: entities
 entities:
     - entity: sensor.pool_water_temperature # Optional
+    - entity: binary_sensor.pool_water_level # Optional - if configured
     - entity: input_select.pool_pump_mode
     - entity: sensor.daily_pump_runtime_sensor
     - entity: switch.pool_pump
@@ -93,6 +117,7 @@ title: Pool card
 **Note**: Make sure to use the correct entity names:
 
 -   `sensor.pool_water_temperature` - pool water temperature sensor
+-   `binary_sensor.pool_water_level` - minimum water level sensor (optional)
 -   `switch.pool_pump` - pool pump switch
 
 ## How it Works
@@ -105,6 +130,7 @@ The blueprint now uses **intelligent cycle management** to prevent pump overheat
 
     - Current time is within working hours (default 09:00-21:00)
     - Pump is off
+    - Water level is sufficient (if sensor configured)
     - Set interval has passed since last state change (default 1 hour)
     - Calculated daily limit is not exceeded (Pool Volume ÷ Flow Rate × Turnover Cycles)
     - Maximum daily runtime limit is not exceeded (default 8 hours)
@@ -144,6 +170,16 @@ The automation uses **two different daily limits** to optimize pump operation:
 -   **"On"** - pump runs continuously (no cycle limits)
 -   **"Off"** - pump stays off and automation is disabled
 
+### Water Level Protection
+
+-   **Optional low water level protection** prevents pump dry running
+-   **Automatic pump shutdown** when water level is too low
+-   **Configurable sensor types**: Normally Closed (NC) or Normally Open (NO)
+-   **Instant notifications** when low water level is detected
+-   **Smart sensor logic**:
+    -   NC type: sensor ON = water OK, sensor OFF = low water
+    -   NO type: sensor OFF = water OK, sensor ON = low water
+
 ### Overheating Prevention
 
 -   **Controlled cycles** prevent continuous operation
@@ -158,12 +194,16 @@ The automation uses **two different daily limits** to optimize pump operation:
 -   **Water Turnover Cycles** determine how many times the entire pool volume should be filtered per day
 -   **Calculated Daily Limit** = Pool Volume ÷ Pump Flow Rate × Water Turnover Cycles (in hours)
 -   The system uses both calculated limit and maximum runtime limit - whichever is lower
+-   **Water Level Sensor** is optional - leave empty to disable protection
+-   **Sensor Type Configuration**: Choose NC or NO based on your physical sensor type
+-   **Notifications** are optional - configure notification service for alerts
 -   **Cycle Runtime** should be set based on your pump specifications and cooling requirements
 -   **Pump Interval** should be longer than **Cycle Runtime** to ensure cooling periods
 -   **Working Hours** allow you to restrict pump operation to specific time periods (e.g., daytime only)
 -   In "Auto" mode, pump will never run continuously - it always follows cycle patterns
 -   Mode changes ("On"/"Off") take effect immediately, overriding current cycle
 -   Pump will be automatically turned off when working hours end, regardless of current cycle
+-   Low water level protection has **highest priority** - overrides all other conditions
 -   It's recommended to set up notifications when daily runtime limit is exceeded
 
 ## Example Configuration
@@ -176,13 +216,21 @@ The automation uses **two different daily limits** to optimize pump operation:
 
 ## Example Cycle Timeline
 
-With settings (120min cycle, 60min interval, 09:00-21:00 working hours, 8h limit):
+With settings (120min cycle, 60min interval, 09:00-21:00 working hours, 8h limit, water level sensor):
 
 -   **09:00** - Working hours start, pump can begin cycles
--   **10:00** - Pump starts (if conditions met)
+-   **10:00** - Pump starts (if all conditions met including water level)
 -   **12:00** - Pump automatically stops (120min runtime completed)
 -   **13:00** - Next cycle can start (60min interval from last change)
 -   **15:00** - Pump automatically stops again
 -   **17:00** - Cycles continue until 8h daily limit reached
 -   **21:00** - Working hours end, pump will be turned off if running
 -   **21:01-08:59** - Pump stays off regardless of other conditions
+
+## Safety Features Priority
+
+1. **🚨 Low Water Level** - Immediate shutdown + notification (highest priority)
+2. **⏰ Working Hours** - Shutdown outside time range
+3. **🔄 Pump Mode** - Off/On/Auto mode control
+4. **⏱️ Runtime Limits** - Daily calculated/maximum limits
+5. **🌡️ Cycle Management** - Controlled runtime and cooling

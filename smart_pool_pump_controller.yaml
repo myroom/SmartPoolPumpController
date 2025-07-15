@@ -110,6 +110,33 @@ blueprint:
                 entity:
                     domain: sensor
 
+        water_level_sensor:
+            name: Water Level Sensor (Optional)
+            description: Minimum water level sensor (binary_sensor). Leave empty to disable.
+            default: ''
+            selector:
+                entity:
+                    domain: binary_sensor
+
+        water_level_sensor_type:
+            name: Water Level Sensor Type
+            description: Sensor contact type when water level is OK
+            default: 'normally_closed'
+            selector:
+                select:
+                    options:
+                        - label: 'Normally Closed (NC) - ON when water OK'
+                          value: 'normally_closed'
+                        - label: 'Normally Open (NO) - OFF when water OK'
+                          value: 'normally_open'
+
+        notification_service:
+            name: Notification Service (Optional)
+            description: Notification service for low water level alerts (e.g., notify.mobile_app_phone)
+            default: ''
+            selector:
+                text:
+
 
 
 variables:
@@ -122,6 +149,9 @@ variables:
     var_cycle_runtime: !input cycle_runtime
     var_pump_mode: !input pool_pump_mode
     var_manual_runtime_sensor: !input manual_runtime_sensor
+    var_water_level_sensor: !input water_level_sensor
+    var_water_level_sensor_type: !input water_level_sensor_type
+    var_notification_service: !input notification_service
     var_start_time: !input start_time
     var_end_time: !input end_time
     var_manual_runtime_today: '{{ states(var_manual_runtime_sensor) | float(0) }}'
@@ -130,6 +160,7 @@ variables:
     var_pump_running_time: '{{ (now().timestamp() - as_timestamp(states[var_pool_pump].last_changed)) / 60 if states(var_pool_pump) == "on" else 0 }}'
     var_current_time: '{{ now().strftime("%H:%M:%S") }}'
     var_time_in_range: '{% if var_start_time <= var_end_time %}{{ var_start_time <= var_current_time <= var_end_time }}{% else %}{{ var_current_time >= var_start_time or var_current_time <= var_end_time }}{% endif %}'
+    var_water_level_ok: '{% if var_water_level_sensor == "" %}true{% else %}{% if var_water_level_sensor_type == "normally_closed" %}{{ states(var_water_level_sensor) == "on" }}{% else %}{{ states(var_water_level_sensor) == "off" }}{% endif %}{% endif %}'
 
 trigger:
     - platform: time_pattern
@@ -141,6 +172,26 @@ condition: []
 
 action:
     - choose:
+          # Low water level protection
+          - conditions:
+                - condition: template
+                  value_template: "{{ not var_water_level_ok }}"
+                - condition: state
+                  entity_id: !input pool_pump
+                  state: 'on'
+            sequence:
+                - service: switch.turn_off
+                  target:
+                      entity_id: !input pool_pump
+                - if:
+                    - condition: template
+                      value_template: "{{ var_notification_service != '' }}"
+                  then:
+                    - service: "{{ var_notification_service }}"
+                      data:
+                        title: "🚨 Pool Pump Alert"
+                        message: "Pump stopped due to low water level. Check pool water level immediately!"
+                - stop: "Pump turned off due to low water level"
           # Immediate shutdown if outside working hours
           - conditions:
                 - condition: template
@@ -177,6 +228,20 @@ action:
                   value_template: "{{ not var_time_in_range }}"
             sequence:
                 - stop: "Automation stopped, outside working hours"
+          # Stop automation if low water level
+          - conditions:
+                - condition: template
+                  value_template: "{{ not var_water_level_ok }}"
+            sequence:
+                - if:
+                    - condition: template
+                      value_template: "{{ var_notification_service != '' }}"
+                  then:
+                    - service: "{{ var_notification_service }}"
+                      data:
+                        title: "🚨 Pool Pump Alert"
+                        message: "Pump automation stopped due to low water level. Check pool water level!"
+                - stop: "Automation stopped due to low water level"
           # Immediate activation in "On" mode
           - conditions:
                 - condition: template
@@ -184,6 +249,8 @@ action:
                 - condition: state
                   entity_id: !input pool_pump
                   state: 'off'
+                - condition: template
+                  value_template: "{{ var_water_level_ok }}"
             sequence:
                 - service: switch.turn_on
                   target:
@@ -210,6 +277,8 @@ action:
                   state: 'off'
                 - condition: template
                   value_template: '{{ var_time_in_range }}'
+                - condition: template
+                  value_template: '{{ var_water_level_ok }}'
                 - condition: template
                   value_template: '{{ var_pump_state_changed_since > var_pump_interval }}'
                 - condition: template
