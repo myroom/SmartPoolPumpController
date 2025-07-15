@@ -94,10 +94,9 @@ binary_sensor:
     - **End Time**: Automation end time - pump stops working after this time (default 21:00)
     - **Pool Pump Mode**: input_select.pool_pump_mode
     - **Daily Pump Runtime Sensor**: sensor.pool_pump_daily_runtime
-    - **🌊 Water Level Protection** (Optional group):
-        - **Water Level Sensor**: Minimum water level sensor (binary_sensor)
-        - **Sensor Type**: NC (ON when water OK) or NO (OFF when water OK)
-        - **Enable Notifications**: Send alerts for low water level
+    - **Water Level Sensor** (Optional): Minimum water level sensor (binary_sensor)
+    - **Water Level Sensor Type**: NC (ON when water OK) or NO (OFF when water OK)
+    - **Send Notifications**: Enable notifications for low water level alerts
 
 ## Lovelace Card Example
 

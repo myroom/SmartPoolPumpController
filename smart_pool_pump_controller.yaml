@@ -1,9 +1,21 @@
 blueprint:
     name: Smart Pool Pump Controller
     description: |
-        Pool pump management with three operation modes: Auto, On, Off.
-        In Auto mode: calculates required run time based on volume and flow rate, accounts for manual operation.
-        On mode: keeps pump always running. Off mode: keeps pump always off.
+        Smart pool pump controller with safety features and intelligent automation.
+        
+        ✨ OPERATION MODES:
+        • Auto: Intelligent cycles with cooling periods, calculated runtime limits
+        • On: Continuous operation (within working hours)  
+        • Off: Forced shutdown
+        
+        🔧 KEY FEATURES:
+        • Working hours control (default 09:00-21:00)
+        • Dual runtime limits: calculated (volume÷flow×cycles) + maximum safety limit
+        • Cycle management: configurable work/rest periods prevent overheating
+        • Water level protection: automatic shutdown on low water + notifications
+        • Manual operation tracking: accounts for user-controlled runtime
+        
+        🛡️ SAFETY PRIORITY: Low water level > Working hours > Mode control > Runtime limits
     domain: automation
     input:
         start_time:
@@ -110,16 +122,8 @@ blueprint:
                 entity:
                     domain: sensor
 
-        water_level_protection_header:
-            name: "🌊 Water Level Protection (Optional)"
-            description: Configure water level sensor and alerts to prevent pump dry running
-            selector:
-                text:
-                    multiline: false
-            default: "Leave water sensor empty to disable protection"
-
         water_level_sensor:
-            name: "  └─ Water Level Sensor"
+            name: Water Level Sensor (Optional)
             description: Minimum water level sensor (binary_sensor). Leave empty to disable.
             default: ''
             selector:
@@ -127,7 +131,7 @@ blueprint:
                     domain: binary_sensor
 
         water_level_sensor_type:
-            name: "  └─ Sensor Type"
+            name: Water Level Sensor Type
             description: Sensor contact type when water level is OK
             default: 'normally_closed'
             selector:
@@ -139,7 +143,7 @@ blueprint:
                           value: 'normally_open'
 
         send_notifications:
-            name: "  └─ Enable Notifications"
+            name: Send Notifications
             description: Send notifications for low water level alerts
             default: false
             selector:
@@ -157,7 +161,6 @@ variables:
     var_cycle_runtime: !input cycle_runtime
     var_pump_mode: !input pool_pump_mode
     var_manual_runtime_sensor: !input manual_runtime_sensor
-    # Water Level Protection Group (header parameter is not used in logic)
     var_water_level_sensor: !input water_level_sensor
     var_water_level_sensor_type: !input water_level_sensor_type
     var_send_notifications: !input send_notifications
