@@ -69,6 +69,8 @@ sensor:
     - **Maximum Daily Run Time**: Maximum daily runtime (hours)
     - **Pump Interval**: Interval between pump cycles (hours, default 1)
     - **Cycle Runtime**: How long pump runs in each cycle (minutes, default 120)
+    - **Start Time**: Automation start time - pump can work from this time (default 09:00)
+    - **End Time**: Automation end time - pump stops working after this time (default 21:00)
     - **Pool Pump Mode**: input_select.pool_pump_mode
     - **Daily Pump Runtime Sensor**: sensor.pool_pump_daily_runtime
 
@@ -100,6 +102,7 @@ The blueprint now uses **intelligent cycle management** to prevent pump overheat
 
 1. **Cycle Start**: Pump turns on automatically when:
 
+    - Current time is within working hours (default 09:00-21:00)
     - Pump is off
     - Set interval has passed since last state change (default 1 hour)
     - Daily runtime limit is not exceeded (default 8 hours)
@@ -135,16 +138,20 @@ The blueprint now uses **intelligent cycle management** to prevent pump overheat
 -   Manual pump operation time is automatically tracked and counts toward daily limit
 -   **Cycle Runtime** should be set based on your pump specifications and cooling requirements
 -   **Pump Interval** should be longer than **Cycle Runtime** to ensure cooling periods
+-   **Working Hours** allow you to restrict pump operation to specific time periods (e.g., daytime only)
 -   In "Auto" mode, pump will never run continuously - it always follows cycle patterns
 -   Mode changes ("On"/"Off") take effect immediately, overriding current cycle
+-   Pump will be automatically turned off when working hours end, regardless of current cycle
 -   It's recommended to set up notifications when daily runtime limit is exceeded
 
 ## Example Cycle Timeline
 
-With default settings (120min cycle, 60min interval):
+With default settings (120min cycle, 60min interval, 09:00-21:00 working hours):
 
--   **12:00** - Pump starts (if conditions met)
--   **14:00** - Pump automatically stops (120min runtime completed)
--   **15:00** - Next cycle can start (60min interval from last change)
--   **17:00** - Pump automatically stops again
--   And so on...
+-   **09:00** - Working hours start, pump can begin cycles
+-   **10:00** - Pump starts (if conditions met)
+-   **12:00** - Pump automatically stops (120min runtime completed)
+-   **13:00** - Next cycle can start (60min interval from last change)
+-   **15:00** - Pump automatically stops again
+-   **21:00** - Working hours end, pump will be turned off if running
+-   **21:01-08:59** - Pump stays off regardless of other conditions
