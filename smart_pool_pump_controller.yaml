@@ -110,8 +110,16 @@ blueprint:
                 entity:
                     domain: sensor
 
+        water_level_protection_header:
+            name: "🌊 Water Level Protection (Optional)"
+            description: Configure water level sensor and alerts to prevent pump dry running
+            selector:
+                text:
+                    multiline: false
+            default: "Leave water sensor empty to disable protection"
+
         water_level_sensor:
-            name: Water Level Sensor (Optional)
+            name: "  └─ Water Level Sensor"
             description: Minimum water level sensor (binary_sensor). Leave empty to disable.
             default: ''
             selector:
@@ -119,7 +127,7 @@ blueprint:
                     domain: binary_sensor
 
         water_level_sensor_type:
-            name: Water Level Sensor Type
+            name: "  └─ Sensor Type"
             description: Sensor contact type when water level is OK
             default: 'normally_closed'
             selector:
@@ -131,7 +139,7 @@ blueprint:
                           value: 'normally_open'
 
         send_notifications:
-            name: Send Notifications
+            name: "  └─ Enable Notifications"
             description: Send notifications for low water level alerts
             default: false
             selector:
@@ -149,6 +157,7 @@ variables:
     var_cycle_runtime: !input cycle_runtime
     var_pump_mode: !input pool_pump_mode
     var_manual_runtime_sensor: !input manual_runtime_sensor
+    # Water Level Protection Group (header parameter is not used in logic)
     var_water_level_sensor: !input water_level_sensor
     var_water_level_sensor_type: !input water_level_sensor_type
     var_send_notifications: !input send_notifications
