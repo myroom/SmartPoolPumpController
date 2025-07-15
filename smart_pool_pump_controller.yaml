@@ -130,12 +130,12 @@ blueprint:
                         - label: 'Normally Open (NO) - OFF when water OK'
                           value: 'normally_open'
 
-        notification_service:
-            name: Notification Service (Optional)
-            description: Notification service for low water level alerts (e.g., notify.mobile_app_phone)
-            default: ''
+        send_notifications:
+            name: Send Notifications
+            description: Send notifications for low water level alerts
+            default: false
             selector:
-                text:
+                boolean:
 
 
 
@@ -151,7 +151,7 @@ variables:
     var_manual_runtime_sensor: !input manual_runtime_sensor
     var_water_level_sensor: !input water_level_sensor
     var_water_level_sensor_type: !input water_level_sensor_type
-    var_notification_service: !input notification_service
+    var_send_notifications: !input send_notifications
     var_start_time: !input start_time
     var_end_time: !input end_time
     var_manual_runtime_today: '{{ states(var_manual_runtime_sensor) | float(0) }}'
@@ -185,9 +185,9 @@ action:
                       entity_id: !input pool_pump
                 - if:
                     - condition: template
-                      value_template: "{{ var_notification_service != '' }}"
+                      value_template: "{{ var_send_notifications }}"
                   then:
-                    - service: "{{ var_notification_service }}"
+                    - service: notify.notify
                       data:
                         title: "🚨 Pool Pump Alert"
                         message: "Pump stopped due to low water level. Check pool water level immediately!"
@@ -235,9 +235,9 @@ action:
             sequence:
                 - if:
                     - condition: template
-                      value_template: "{{ var_notification_service != '' }}"
+                      value_template: "{{ var_send_notifications }}"
                   then:
-                    - service: "{{ var_notification_service }}"
+                    - service: notify.notify
                       data:
                         title: "🚨 Pool Pump Alert"
                         message: "Pump automation stopped due to low water level. Check pool water level!"

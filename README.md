@@ -96,7 +96,7 @@ binary_sensor:
     - **Daily Pump Runtime Sensor**: sensor.pool_pump_daily_runtime
     - **Water Level Sensor** (Optional): Minimum water level sensor (binary_sensor)
     - **Water Level Sensor Type**: NC (ON when water OK) or NO (OFF when water OK)
-    - **Notification Service** (Optional): Service for low water level alerts
+    - **Send Notifications**: Enable notifications for low water level alerts
 
 ## Lovelace Card Example
 
@@ -196,7 +196,7 @@ The automation uses **two different daily limits** to optimize pump operation:
 -   The system uses both calculated limit and maximum runtime limit - whichever is lower
 -   **Water Level Sensor** is optional - leave empty to disable protection
 -   **Sensor Type Configuration**: Choose NC or NO based on your physical sensor type
--   **Notifications** are optional - configure notification service for alerts
+-   **Notifications** are optional - simply check the box to enable alerts
 -   **Cycle Runtime** should be set based on your pump specifications and cooling requirements
 -   **Pump Interval** should be longer than **Cycle Runtime** to ensure cooling periods
 -   **Working Hours** allow you to restrict pump operation to specific time periods (e.g., daytime only)
