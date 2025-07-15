@@ -48,6 +48,17 @@ blueprint:
                     step: 0.1
                     mode: box
 
+        water_turnover_cycles:
+            name: Water Turnover Cycles
+            description: Number of complete water turnovers per day (recommended 1-3)
+            default: 2
+            selector:
+                number:
+                    min: 1
+                    max: 5
+                    step: 1
+                    mode: slider
+
         maximum_run_time:
             name: Maximum Daily Run Time
             default: 8
@@ -105,6 +116,7 @@ variables:
     var_pool_pump: !input pool_pump
     var_pool_volume: !input pool_volume
     var_pump_flow_rate: !input pump_flow_rate
+    var_water_turnover_cycles: !input water_turnover_cycles
     var_maximum_run_time: !input maximum_run_time
     var_pump_interval: !input pump_interval
     var_cycle_runtime: !input cycle_runtime
@@ -113,6 +125,7 @@ variables:
     var_start_time: !input start_time
     var_end_time: !input end_time
     var_manual_runtime_today: '{{ states(var_manual_runtime_sensor) | float(0) }}'
+    var_calculated_daily_limit: '{{ (var_pool_volume / var_pump_flow_rate * var_water_turnover_cycles) }}'
     var_pump_state_changed_since: '{{ (now().timestamp() - as_timestamp(states[var_pool_pump].last_changed)) / 3600 }}'
     var_pump_running_time: '{{ (now().timestamp() - as_timestamp(states[var_pool_pump].last_changed)) / 60 if states(var_pool_pump) == "on" else 0 }}'
     var_current_time: '{{ now().strftime("%H:%M:%S") }}'
@@ -199,6 +212,8 @@ action:
                   value_template: '{{ var_time_in_range }}'
                 - condition: template
                   value_template: '{{ var_pump_state_changed_since > var_pump_interval }}'
+                - condition: template
+                  value_template: '{{ var_manual_runtime_today < var_calculated_daily_limit }}'
                 - condition: template
                   value_template: '{{ var_manual_runtime_today < var_maximum_run_time }}'
             sequence:
