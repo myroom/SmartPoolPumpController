@@ -175,7 +175,7 @@ The automation uses **two different daily limits** to optimize pump operation:
 -   **Optional low water level protection** prevents pump dry running
 -   **Automatic pump shutdown** when water level is too low
 -   **Configurable sensor types**: Normally Closed (NC) or Normally Open (NO)
--   **Instant notifications** when low water level is detected
+-   **Simple notification system** - just check the box to enable alerts
 -   **Smart sensor logic**:
     -   NC type: sensor ON = water OK, sensor OFF = low water
     -   NO type: sensor OFF = water OK, sensor ON = low water
